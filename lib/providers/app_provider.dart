@@ -13,7 +13,6 @@ class AppProvider extends ChangeNotifier {
   /// Check and request all required permissions
   Future<bool> checkPermissions() async {
     final permissions = [
-      Permission.phone,
       Permission.microphone,
     ];
 

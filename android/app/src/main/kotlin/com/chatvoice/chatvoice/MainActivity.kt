@@ -157,6 +157,7 @@ class MainActivity : FlutterActivity() {
                 } else {
                     result.success(true)
                 }
+                return
             }
         }
         result.success(false)

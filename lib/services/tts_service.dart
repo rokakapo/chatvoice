@@ -55,7 +55,7 @@ class TTSService {
           'speed': settings.ttsSpeed,
           'response_format': 'mp3',
         }),
-      );
+      ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final outputPath = await _getTempPath();
@@ -90,7 +90,7 @@ class TTSService {
           'input': text,
           'response_format': 'wav',
         }),
-      );
+      ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final outputPath = await _getTempPath(ext: 'wav');
@@ -124,7 +124,7 @@ class TTSService {
             'similarity_boost': 0.75,
           },
         }),
-      );
+      ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final outputPath = await _getTempPath();
@@ -156,7 +156,7 @@ class TTSService {
           'voice': settings.ttsVoice,
           'speed': settings.ttsSpeed,
         }),
-      );
+      ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final outputPath = await _getTempPath();

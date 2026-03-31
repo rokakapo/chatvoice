@@ -774,7 +774,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
                 TextButton(
                   onPressed: () {
-                    // Navigate to call log
+                    Navigator.pushNamed(context, '/call-log');
                   },
                   child: Text(
                     'عرض الكل',
@@ -854,6 +854,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   String _formatTime(DateTime time) {
     final now = DateTime.now();
     final diff = now.difference(time);
+    if (diff.inMinutes < 1) return 'الآن';
     if (diff.inMinutes < 60) return 'منذ ${diff.inMinutes} دقيقة';
     if (diff.inHours < 24) return 'منذ ${diff.inHours} ساعة';
     return 'منذ ${diff.inDays} يوم';

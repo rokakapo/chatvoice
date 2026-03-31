@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -14,6 +15,8 @@ class AppProvider extends ChangeNotifier {
   Future<bool> checkPermissions() async {
     final permissions = [
       Permission.microphone,
+      Permission.phone,
+      if (Platform.isAndroid) Permission.notification,
     ];
 
     Map<Permission, PermissionStatus> statuses = await permissions.request();
@@ -44,3 +47,4 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 }
+

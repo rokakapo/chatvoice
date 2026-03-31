@@ -41,7 +41,7 @@ class STTService {
       final file = await http.MultipartFile.fromPath('file', audioFilePath);
       request.files.add(file);
 
-      final streamedResponse = await request.send();
+      final streamedResponse = await request.send().timeout(const Duration(seconds: 30));
       final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 200) {
@@ -75,7 +75,7 @@ class STTService {
       final file = await http.MultipartFile.fromPath('file', audioFilePath);
       request.files.add(file);
 
-      final streamedResponse = await request.send();
+      final streamedResponse = await request.send().timeout(const Duration(seconds: 30));
       final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 200) {
@@ -107,7 +107,7 @@ class STTService {
       final file = await http.MultipartFile.fromPath('file', audioFilePath);
       request.files.add(file);
 
-      final streamedResponse = await request.send();
+      final streamedResponse = await request.send().timeout(const Duration(seconds: 30));
       final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 200) {

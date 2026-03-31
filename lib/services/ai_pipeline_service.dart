@@ -8,12 +8,13 @@ import 'native_call_service.dart';
 
 /// AI Pipeline - Orchestrates STT -> LLM -> TTS flow
 class AIPipelineService {
-  late STTService _sttService;
-  late LLMService _llmService;
-  late TTSService _ttsService;
+  STTService? _sttService;
+  LLMService? _llmService;
+  TTSService? _ttsService;
   
   bool _isProcessing = false;
   bool get isProcessing => _isProcessing;
+  bool get isInitialized => _sttService != null && _llmService != null && _ttsService != null;
 
   final StreamController<PipelineEvent> _eventController = StreamController.broadcast();
   Stream<PipelineEvent> get events => _eventController.stream;
@@ -26,12 +27,24 @@ class AIPipelineService {
 
   /// Reset conversation for new call
   void resetConversation() {
-    _llmService.resetConversation();
+    _llmService?.resetConversation();
   }
 
   /// Process a recorded audio chunk through the full pipeline:
   /// Audio -> STT -> LLM -> TTS -> Play to call
   Future<PipelineResult> processAudioChunk(String audioFilePath) async {
+    if (!isInitialized) {
+      debugPrint('Pipeline services not initialized');
+      _eventController.add(PipelineEvent(
+        stage: PipelineStage.error,
+        message: 'الخدمات غير مهيأة - يرجى التحقق من الإعدادات',
+      ));
+      return PipelineResult(
+        success: false,
+        error: 'Services not initialized - check settings',
+      );
+    }
+
     if (_isProcessing) {
       debugPrint('Pipeline already processing, skipping...');
       return PipelineResult(
@@ -53,7 +66,7 @@ class AIPipelineService {
         message: 'تحويل الصوت إلى نص...',
       ));
       
-      final transcription = await _sttService.transcribe(audioFilePath);
+      final transcription = await _sttService!.transcribe(audioFilePath);
       debugPrint('Transcription: $transcription');
       
       if (transcription.isEmpty) {
@@ -79,7 +92,7 @@ class AIPipelineService {
         message: 'معالجة الرد بالذكاء الاصطناعي...',
       ));
 
-      final aiResponse = await _llmService.generateResponse(transcription);
+      final aiResponse = await _llmService!.generateResponse(transcription);
       debugPrint('AI Response: $aiResponse');
 
       _eventController.add(PipelineEvent(
@@ -93,7 +106,7 @@ class AIPipelineService {
         message: 'تحويل الرد إلى صوت...',
       ));
 
-      final audioOutputPath = await _ttsService.synthesize(aiResponse);
+      final audioOutputPath = await _ttsService!.synthesize(aiResponse);
       debugPrint('TTS output: $audioOutputPath');
 
       _eventController.add(PipelineEvent(

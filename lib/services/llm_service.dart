@@ -8,11 +8,21 @@ class LLMService {
   final AppSettings settings;
   final List<Map<String, String>> _conversationHistory = [];
 
+  /// Maximum number of messages to keep in history to avoid exceeding context window
+  static const int _maxHistoryMessages = 10;
+
   LLMService(this.settings);
 
   /// Reset conversation history
   void resetConversation() {
     _conversationHistory.clear();
+  }
+
+  /// Trim conversation history to prevent exceeding API context limits
+  void _trimHistory() {
+    while (_conversationHistory.length > _maxHistoryMessages) {
+      _conversationHistory.removeAt(0);
+    }
   }
 
   /// Generate a response from the LLM
@@ -33,6 +43,7 @@ class LLMService {
   Future<String> _generateWithOpenAI(String userMessage) async {
     try {
       _conversationHistory.add({'role': 'user', 'content': userMessage});
+      _trimHistory();
 
       final messages = [
         {'role': 'system', 'content': settings.systemPrompt},
@@ -51,7 +62,7 @@ class LLMService {
           'temperature': settings.temperature,
           'max_tokens': settings.maxTokens,
         }),
-      );
+      ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -60,9 +71,16 @@ class LLMService {
         return assistantMessage.trim();
       } else {
         debugPrint('LLM Error: ${response.statusCode} - ${response.body}');
+        _conversationHistory.removeLast(); // Remove failed user message
         throw Exception('LLM failed: ${response.statusCode}');
       }
     } catch (e) {
+      // Remove the user message if it's still the last entry (failed request)
+      if (_conversationHistory.isNotEmpty && 
+          _conversationHistory.last['role'] == 'user' &&
+          _conversationHistory.last['content'] == userMessage) {
+        _conversationHistory.removeLast();
+      }
       debugPrint('LLM Exception: $e');
       rethrow;
     }
@@ -72,6 +90,7 @@ class LLMService {
   Future<String> _generateWithGroq(String userMessage) async {
     try {
       _conversationHistory.add({'role': 'user', 'content': userMessage});
+      _trimHistory();
 
       final messages = [
         {'role': 'system', 'content': settings.systemPrompt},
@@ -85,12 +104,12 @@ class LLMService {
           'Authorization': 'Bearer ${settings.llmApiKey}',
         },
         body: json.encode({
-          'model': settings.llmModel,
+          'model': settings.llmModel == 'llama-3.1-70b-versatile' || settings.llmModel.isEmpty ? 'llama-3.3-70b-versatile' : settings.llmModel,
           'messages': messages,
           'temperature': settings.temperature,
-          'max_tokens': settings.maxTokens,
+          'max_completion_tokens': settings.maxTokens,
         }),
-      );
+      ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -98,9 +117,15 @@ class LLMService {
         _conversationHistory.add({'role': 'assistant', 'content': assistantMessage});
         return assistantMessage.trim();
       } else {
-        throw Exception('Groq LLM failed: ${response.statusCode}');
+        _conversationHistory.removeLast(); // Remove failed user message
+        throw Exception('Groq LLM failed: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
+      if (_conversationHistory.isNotEmpty && 
+          _conversationHistory.last['role'] == 'user' &&
+          _conversationHistory.last['content'] == userMessage) {
+        _conversationHistory.removeLast();
+      }
       debugPrint('Groq LLM Exception: $e');
       rethrow;
     }
@@ -110,6 +135,7 @@ class LLMService {
   Future<String> _generateWithCustom(String userMessage) async {
     try {
       _conversationHistory.add({'role': 'user', 'content': userMessage});
+      _trimHistory();
 
       final messages = [
         {'role': 'system', 'content': settings.systemPrompt},
@@ -129,7 +155,7 @@ class LLMService {
           'temperature': settings.temperature,
           'max_tokens': settings.maxTokens,
         }),
-      );
+      ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -137,9 +163,15 @@ class LLMService {
         _conversationHistory.add({'role': 'assistant', 'content': assistantMessage});
         return assistantMessage.trim();
       } else {
+        _conversationHistory.removeLast(); // Remove failed user message
         throw Exception('Custom LLM failed: ${response.statusCode}');
       }
     } catch (e) {
+      if (_conversationHistory.isNotEmpty && 
+          _conversationHistory.last['role'] == 'user' &&
+          _conversationHistory.last['content'] == userMessage) {
+        _conversationHistory.removeLast();
+      }
       debugPrint('Custom LLM Exception: $e');
       rethrow;
     }

@@ -66,9 +66,21 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   void initState() {
     super.initState();
-    // Initialize call service
+    // Initialize call service and sync settings to pipeline on startup
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<CallProvider>().initialize();
+      final settings = context.read<SettingsProvider>();
+      final callProvider = context.read<CallProvider>();
+      callProvider.initialize();
+      // Always push saved settings into the pipeline so AI is ready immediately
+      if (settings.isConfigured) {
+        callProvider.updateSettings(settings.settings);
+      }
+      // Listen for future settings changes and keep pipeline in sync
+      settings.addListener(() {
+        if (settings.isConfigured) {
+          callProvider.updateSettings(settings.settings);
+        }
+      });
     });
   }
 

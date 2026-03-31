@@ -97,16 +97,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             ).animate().fadeIn(duration: 600.ms).slideX(begin: -0.2),
             const SizedBox(height: 4),
-            Consumer<SettingsProvider>(
-              builder: (context, settings, _) {
+            Consumer2<SettingsProvider, CallProvider>(
+              builder: (context, settings, callProvider, _) {
+                final ready = callProvider.isPipelineReady;
+                final configured = settings.isConfigured;
+                String label;
+                Color color;
+                if (!configured) {
+                  label = '⚠️ يرجى إعداد مفاتيح API';
+                  color = AppTheme.warningColor;
+                } else if (ready) {
+                  label = '✅ الذكاء الاصطناعي جاهز';
+                  color = AppTheme.successColor;
+                } else {
+                  label = '⏳ جاري تهيئة الذكاء الاصطناعي...';
+                  color = AppTheme.textSecondary;
+                }
                 return Text(
-                  settings.isConfigured ? 'مساعد الرد الذكي' : '⚠️ يرجى إعداد مفاتيح API',
-                  style: GoogleFonts.cairo(
-                    fontSize: 14,
-                    color: settings.isConfigured 
-                        ? AppTheme.textSecondary 
-                        : AppTheme.warningColor,
-                  ),
+                  label,
+                  style: GoogleFonts.cairo(fontSize: 14, color: color),
                 ).animate().fadeIn(delay: 200.ms);
               },
             ),

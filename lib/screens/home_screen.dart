@@ -565,6 +565,47 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     AppTheme.successColor,
                     _getStageStatus(callProvider, PipelineStage.playing, PipelineStage.completed),
                   ),
+                  if (callProvider.pipelineEvents.any((e) => e.stage == PipelineStage.error)) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.errorColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppTheme.errorColor.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.error_outline_rounded, color: AppTheme.errorColor, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              callProvider.pipelineEvents.firstWhere((e) => e.stage == PipelineStage.error).message,
+                              style: GoogleFonts.cairo(fontSize: 12, color: AppTheme.errorColor),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  if (callProvider.pipelineEvents.any((e) => e.stage == PipelineStage.sttComplete)) ...[
+                    const SizedBox(height: 16),
+                    _buildMessageBubble(
+                      'نص المتصل (تفويض الصوت):',
+                      callProvider.pipelineEvents.lastWhere((e) => e.stage == PipelineStage.sttComplete).message,
+                      Icons.person_rounded,
+                      AppTheme.infoColor,
+                    ),
+                  ],
+                  if (callProvider.pipelineEvents.any((e) => e.stage == PipelineStage.llmComplete)) ...[
+                    const SizedBox(height: 8),
+                    _buildMessageBubble(
+                      'رد الذكاء الاصطناعي:',
+                      callProvider.pipelineEvents.lastWhere((e) => e.stage == PipelineStage.llmComplete).message,
+                      Icons.psychology_rounded,
+                      AppTheme.primaryColor,
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -574,11 +615,37 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
+  Widget _buildMessageBubble(String title, String text, IconData icon, Color color) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 16, color: color),
+              const SizedBox(width: 6),
+              Text(title, style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(text, style: GoogleFonts.cairo(fontSize: 14, color: Colors.white, height: 1.4)),
+        ],
+      ),
+    );
+  }
+
   String _getStageStatus(CallProvider provider, PipelineStage processing, PipelineStage complete) {
     final events = provider.pipelineEvents;
     if (events.any((e) => e.stage == complete)) return 'complete';
+    if (events.any((e) => e.stage == PipelineStage.error)) return 'error'; // Priority to error
     if (events.any((e) => e.stage == processing)) return 'processing';
-    if (events.any((e) => e.stage == PipelineStage.error)) return 'error';
     return 'pending';
   }
 
